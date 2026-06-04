@@ -18,6 +18,15 @@
     </div>
   </noscript>
 </head>
+<script>
+  function sendHeight() {
+    parent.postMessage({ iframeHeight: document.body.scrollHeight }, '*');
+  }
+  window.addEventListener('load', sendHeight);
+  window.addEventListener('resize', sendHeight);
+  // Also poll for dynamic content
+  setInterval(sendHeight, 500);
+</script>
 <body>
   <div id="__bundler_thumbnail">
   <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
