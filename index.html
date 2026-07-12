@@ -1513,11 +1513,11 @@ p { margin: 0; }
 .booking-embed iframe {
   display: block;
   width: 100%;
-  height: 660px;      /* default so it's visible immediately, before the resizer runs */
-  min-height: 560px;  /* floor: the resizer can grow it, but it can never collapse/vanish */
+  height: 700px;   /* visible default; the resizer overrides this to fit exactly */
 }
 @media (max-width: 700px) {
-  .booking-embed iframe { height: 940px; min-height: 940px; }  /* stacked mobile layout is taller */
+  /* Generous on mobile so the frame is never shorter than the widget (which would trap touch-scroll). */
+  .booking-embed iframe { height: 1500px; }
 }
 
 /* ---------------------------------------------------- */
@@ -1605,7 +1605,6 @@ p { margin: 0; }
 }
 
 /* Smooth in-page scrolling + sticky-nav offset for anchor targets */
-html { scroll-behavior: smooth; }
 #top, #how, #pricing, #faq, #book, #demo { scroll-margin-top: 84px; }
 
 </style>
@@ -4125,22 +4124,32 @@ function App() {
 }
 ReactDOM.createRoot(document.getElementById("root")).render(/*#__PURE__*/React.createElement(App, null));</script>
 
-<!-- In-page smooth scrolling for hash-anchor buttons/nav links (robust on mobile) -->
+<!-- In-page smooth scrolling (self-animated, cancels on touch — safe on mobile) -->
 <script>
   (function () {
-    function scrollToEl(el) {
+    var raf = null;
+    function cancel() { if (raf) { cancelAnimationFrame(raf); raf = null; } }
+    window.addEventListener('wheel', cancel, { passive: true });
+    window.addEventListener('touchstart', cancel, { passive: true });
+    window.addEventListener('keydown', cancel, true);
+    function animateTo(el) {
       var navOffset = 84;
-      var y = el.getBoundingClientRect().top + (window.pageYOffset || document.documentElement.scrollTop || 0) - navOffset;
-      if (y < 0) y = 0;
-      try {
-        if ('scrollBehavior' in document.documentElement.style) {
-          window.scrollTo({ top: y, behavior: 'smooth' });
-        } else {
-          window.scrollTo(0, y);
-        }
-      } catch (err) {
-        window.scrollTo(0, y);
+      var start = window.pageYOffset || document.documentElement.scrollTop || 0;
+      var end = el.getBoundingClientRect().top + start - navOffset;
+      if (end < 0) end = 0;
+      var dist = end - start;
+      if (Math.abs(dist) < 2) { window.scrollTo(0, end); return; }
+      var dur = Math.min(600, Math.max(250, Math.abs(dist) * 0.5));
+      var t0 = null;
+      cancel();
+      function step(ts) {
+        if (t0 === null) t0 = ts;
+        var p = Math.min(1, (ts - t0) / dur);
+        var e = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2; // easeInOutQuad
+        window.scrollTo(0, start + dist * e);
+        if (p < 1) { raf = requestAnimationFrame(step); } else { raf = null; }
       }
+      raf = requestAnimationFrame(step);
     }
     document.addEventListener('click', function (e) {
       var a = e.target && e.target.closest ? e.target.closest('a[href^="#"]') : null;
@@ -4150,7 +4159,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(/*#__PURE__*/React.c
       var el = document.getElementById(id);
       if (!el) return;
       e.preventDefault();
-      scrollToEl(el);
+      animateTo(el);
       if (history.replaceState) { history.replaceState(null, '', '#' + id); }
     });
   })();
