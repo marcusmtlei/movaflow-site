@@ -1603,6 +1603,11 @@ p { margin: 0; }
   h1 { font-size: clamp(32px, 10vw, 46px) !important; letter-spacing: -0.02em !important; }
   h2 { font-size: clamp(26px, 7.5vw, 38px) !important; }
 }
+
+/* Smooth in-page scrolling + sticky-nav offset for anchor targets */
+html { scroll-behavior: smooth; }
+#top, #how, #pricing, #faq, #book, #demo { scroll-margin-top: 84px; }
+
 </style>
 </head>
 <body>
@@ -4120,26 +4125,40 @@ function App() {
 }
 ReactDOM.createRoot(document.getElementById("root")).render(/*#__PURE__*/React.createElement(App, null));</script>
 
+<!-- In-page smooth scrolling for hash-anchor buttons/nav links -->
+<script>
+  // In-page smooth scrolling for hash links (Learn more -> #how, Book a Live Demo -> #book, nav links).
+  // Delegated on document so it also covers links React renders after load. External links,
+  // mailto:, and unknown targets (#privacy/#terms) fall through to default behavior.
+  document.addEventListener('click', function (e) {
+    var a = e.target && e.target.closest ? e.target.closest('a[href^="#"]') : null;
+    if (!a) return;
+    var id = a.getAttribute('href').slice(1);
+    if (!id) return;
+    var target = document.getElementById(id);
+    if (!target) return;
+    e.preventDefault();
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (history.replaceState) { history.replaceState(null, '', '#' + id); }
+    else { window.location.hash = id; }
+  });
+</script>
+
 <!-- GoHighLevel booking-widget auto-resize (loads the instant the iframe mounts) -->
 <script>
-  // Load GHL's booking-widget resizer as soon as React has mounted the iframe.
-  // Waiting for window 'load' delays this until the (slow) widget finishes loading,
-  // which made the calendar appear late or intermittently.
   (function () {
     var loaded = false;
     function loadResizer() {
       if (loaded) return; loaded = true;
       var s = document.createElement('script');
       s.src = 'https://link.msgsndr.com/js/form_embed.js';
-      s.type = 'text/javascript';
-      s.async = true;
+      s.type = 'text/javascript'; s.async = true;
       document.body.appendChild(s);
     }
     var tries = 0;
     (function waitForIframe() {
       if (document.querySelector('.booking-embed iframe')) { loadResizer(); return; }
-      if (tries++ < 200) { setTimeout(waitForIframe, 50); }  // up to ~10s
-      else { loadResizer(); }
+      if (tries++ < 200) { setTimeout(waitForIframe, 50); } else { loadResizer(); }
     })();
   })();
 </script>
