@@ -1513,9 +1513,11 @@ p { margin: 0; }
 .booking-embed iframe {
   display: block;
   width: 100%;
+  height: 660px;      /* default so it's visible immediately, before the resizer runs */
+  min-height: 560px;  /* floor: the resizer can grow it, but it can never collapse/vanish */
 }
-.booking-embed iframe {
-  display: block;
+@media (max-width: 700px) {
+  .booking-embed iframe { height: 940px; min-height: 940px; }  /* stacked mobile layout is taller */
 }
 
 /* ---------------------------------------------------- */
@@ -4029,7 +4031,6 @@ function FinalCTA() {
     src: "https://api.leadconnectorhq.com/widget/booking/PjhOxjtPISpZe25YFasr",
     style: {
       width: "100%",
-      height: "700px",
       border: "none",
       overflow: "hidden",
       display: "block"
@@ -4119,19 +4120,28 @@ function App() {
 }
 ReactDOM.createRoot(document.getElementById("root")).render(/*#__PURE__*/React.createElement(App, null));</script>
 
-<!-- GoHighLevel booking-widget auto-resize (loads after the iframe mounts) -->
+<!-- GoHighLevel booking-widget auto-resize (loads the instant the iframe mounts) -->
 <script>
-  // GHL booking widget auto-resize.
-  // The widget broadcasts its height via postMessage; GHL's form_embed.js
-  // listens and sets the iframe height. It scans for the iframe when it loads,
-  // so we load it only after React has mounted the iframe into the DOM.
-  window.addEventListener('load', function () {
-    var s = document.createElement('script');
-    s.src = 'https://link.msgsndr.com/js/form_embed.js';
-    s.type = 'text/javascript';
-    s.async = true;
-    document.body.appendChild(s);
-  });
+  // Load GHL's booking-widget resizer as soon as React has mounted the iframe.
+  // Waiting for window 'load' delays this until the (slow) widget finishes loading,
+  // which made the calendar appear late or intermittently.
+  (function () {
+    var loaded = false;
+    function loadResizer() {
+      if (loaded) return; loaded = true;
+      var s = document.createElement('script');
+      s.src = 'https://link.msgsndr.com/js/form_embed.js';
+      s.type = 'text/javascript';
+      s.async = true;
+      document.body.appendChild(s);
+    }
+    var tries = 0;
+    (function waitForIframe() {
+      if (document.querySelector('.booking-embed iframe')) { loadResizer(); return; }
+      if (tries++ < 200) { setTimeout(waitForIframe, 50); }  // up to ~10s
+      else { loadResizer(); }
+    })();
+  })();
 </script>
 
 <!-- iframe auto-height for GHL embedding of this page -->
