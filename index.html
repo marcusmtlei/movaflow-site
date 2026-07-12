@@ -4124,8 +4124,38 @@ function App() {
 }
 ReactDOM.createRoot(document.getElementById("root")).render(/*#__PURE__*/React.createElement(App, null));</script>
 
-<!-- NOTE: in-page anchor links (#how, #book, #pricing, #faq) use native browser
-     navigation, same as the demo landing page. No custom scroll JS. -->
+<!-- Standalone: native anchor navigation (no JS).
+     Embedded in an iframe: bridge below asks the parent page to scroll,
+     and external links escape to the top window. -->
+<script>
+  (function () {
+    var embedded = false;
+    try { embedded = window.self !== window.top; } catch (err) { embedded = true; }
+    if (!embedded) return;  // standalone (github.io): native anchors, untouched
+
+    document.addEventListener('click', function (e) {
+      var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+      if (!a) return;
+      var href = a.getAttribute('href') || '';
+
+      // In-page anchors: the iframe is expanded to full height, so the PARENT page
+      // scrolls, not this document. Send the target position to the parent.
+      if (href.charAt(0) === '#') {
+        var el = document.getElementById(href.slice(1));
+        if (!el) return;
+        e.preventDefault();
+        // Iframe never scrolls internally, so rect.top IS the offset from the iframe's top.
+        window.parent.postMessage({ movaflowScrollTo: el.getBoundingClientRect().top }, '*');
+        return;
+      }
+
+      // External links: without this they'd load INSIDE the iframe (site-in-site).
+      if (/^https?:/i.test(href) && !a.target) {
+        a.target = '_top';
+      }
+    });
+  })();
+</script>
 
 <!-- GoHighLevel booking-widget auto-resize (loads the instant the iframe mounts) -->
 <script>
