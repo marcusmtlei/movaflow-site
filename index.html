@@ -4125,23 +4125,35 @@ function App() {
 }
 ReactDOM.createRoot(document.getElementById("root")).render(/*#__PURE__*/React.createElement(App, null));</script>
 
-<!-- In-page smooth scrolling for hash-anchor buttons/nav links -->
+<!-- In-page smooth scrolling for hash-anchor buttons/nav links (robust on mobile) -->
 <script>
-  // In-page smooth scrolling for hash links (Learn more -> #how, Book a Live Demo -> #book, nav links).
-  // Delegated on document so it also covers links React renders after load. External links,
-  // mailto:, and unknown targets (#privacy/#terms) fall through to default behavior.
-  document.addEventListener('click', function (e) {
-    var a = e.target && e.target.closest ? e.target.closest('a[href^="#"]') : null;
-    if (!a) return;
-    var id = a.getAttribute('href').slice(1);
-    if (!id) return;
-    var target = document.getElementById(id);
-    if (!target) return;
-    e.preventDefault();
-    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    if (history.replaceState) { history.replaceState(null, '', '#' + id); }
-    else { window.location.hash = id; }
-  });
+  (function () {
+    function scrollToEl(el) {
+      var navOffset = 84;
+      var y = el.getBoundingClientRect().top + (window.pageYOffset || document.documentElement.scrollTop || 0) - navOffset;
+      if (y < 0) y = 0;
+      try {
+        if ('scrollBehavior' in document.documentElement.style) {
+          window.scrollTo({ top: y, behavior: 'smooth' });
+        } else {
+          window.scrollTo(0, y);
+        }
+      } catch (err) {
+        window.scrollTo(0, y);
+      }
+    }
+    document.addEventListener('click', function (e) {
+      var a = e.target && e.target.closest ? e.target.closest('a[href^="#"]') : null;
+      if (!a) return;
+      var id = a.getAttribute('href').slice(1);
+      if (!id) return;
+      var el = document.getElementById(id);
+      if (!el) return;
+      e.preventDefault();
+      scrollToEl(el);
+      if (history.replaceState) { history.replaceState(null, '', '#' + id); }
+    });
+  })();
 </script>
 
 <!-- GoHighLevel booking-widget auto-resize (loads the instant the iframe mounts) -->
