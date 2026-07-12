@@ -4124,46 +4124,8 @@ function App() {
 }
 ReactDOM.createRoot(document.getElementById("root")).render(/*#__PURE__*/React.createElement(App, null));</script>
 
-<!-- In-page smooth scrolling (self-animated, cancels on touch — safe on mobile) -->
-<script>
-  (function () {
-    var raf = null;
-    function cancel() { if (raf) { cancelAnimationFrame(raf); raf = null; } }
-    window.addEventListener('wheel', cancel, { passive: true });
-    window.addEventListener('touchstart', cancel, { passive: true });
-    window.addEventListener('keydown', cancel, true);
-    function animateTo(el) {
-      var navOffset = 84;
-      var start = window.pageYOffset || document.documentElement.scrollTop || 0;
-      var end = el.getBoundingClientRect().top + start - navOffset;
-      if (end < 0) end = 0;
-      var dist = end - start;
-      if (Math.abs(dist) < 2) { window.scrollTo(0, end); return; }
-      var dur = Math.min(600, Math.max(250, Math.abs(dist) * 0.5));
-      var t0 = null;
-      cancel();
-      function step(ts) {
-        if (t0 === null) t0 = ts;
-        var p = Math.min(1, (ts - t0) / dur);
-        var e = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2; // easeInOutQuad
-        window.scrollTo(0, start + dist * e);
-        if (p < 1) { raf = requestAnimationFrame(step); } else { raf = null; }
-      }
-      raf = requestAnimationFrame(step);
-    }
-    document.addEventListener('click', function (e) {
-      var a = e.target && e.target.closest ? e.target.closest('a[href^="#"]') : null;
-      if (!a) return;
-      var id = a.getAttribute('href').slice(1);
-      if (!id) return;
-      var el = document.getElementById(id);
-      if (!el) return;
-      e.preventDefault();
-      animateTo(el);
-      if (history.replaceState) { history.replaceState(null, '', '#' + id); }
-    });
-  })();
-</script>
+<!-- NOTE: in-page anchor links (#how, #book, #pricing, #faq) use native browser
+     navigation, same as the demo landing page. No custom scroll JS. -->
 
 <!-- GoHighLevel booking-widget auto-resize (loads the instant the iframe mounts) -->
 <script>
